@@ -1,8 +1,20 @@
-import express from "express";
-import cors from "cors";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Importar la conexión a la DB y las rutas
+import connectDB from './config/db.js';
+import machineRoutes from './routes/machineRoutes.js';
+import userRoutes from './routes/userRoutes.js'; // Asumimos que tienes este archivo
+import attendanceRoutes from './routes/attendanceRoutes.js';
+
+// Cargar variables de entorno
+dotenv.config();
+
+// Conectar a la base de datos
+connectDB();
 
 const app = express();
 
@@ -10,38 +22,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- Configuración de uploads ---
-const uploadDir = path.join(process.cwd(), "backend/uploads");
+// --- Servir archivos estáticos (imágenes) ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Crear carpeta si no existe
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
+// --- Rutas del API ---
+app.get('/api', (req, res) => {
+  res.send('API del Gimnasio funcionando...');
 });
 
-const upload = multer({ storage });
+app.use('/api/machines', machineRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
-// --- Rutas API ---
-// Ejemplo GET
-app.get("/api/hello", (req, res) => {
-  res.json({ message: "Hola desde Express en Vercel 🚀" });
-});
 
-// Ejemplo POST con subida de archivo
-app.post("/api/upload", upload.single("file"), (req, res) => {
-  res.json({
-    message: "Archivo subido correctamente",
-    filename: req.file.filename,
-  });
-});
-
-// Exportar app para que Vercel lo use como Serverless Function
+// Exportar la app para Vercel
+export default app;ra que Vercel lo use como Serverless Function
 export default app;
